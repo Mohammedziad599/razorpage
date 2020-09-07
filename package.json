@@ -1,10 +1,10 @@
 {
-    "name": "razor_pages",
+    "name": "RazorPage",
     "displayName": "C# Razor Pages",
     "description": "Create Razor Pages form the Menu command",
     "author": "Mohammed Ziad",
     "license": "SEE LICENSE IN license.txt",
-    "version": "1.3.0",
+    "version": "1.0.0",
     "publisher": "mohammedziad599",
     "engines": {
         "vscode": "^1.5.0"
