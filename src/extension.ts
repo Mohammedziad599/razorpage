@@ -30,28 +30,32 @@ export function activate(context: vscode.ExtensionContext) {
     // });
 
     //context.subscriptions.push(disposable);
-    context.subscriptions.push(vscode.commands.registerCommand('csharpextensions.createClass', createClass));
-    context.subscriptions.push(vscode.commands.registerCommand('csharpextensions.createInterface', createInterface));
+    context.subscriptions.push(vscode.commands.registerCommand('razorPage.createRazorPage', createRazorPage));
+    // context.subscriptions.push(vscode.commands.registerCommand('csharpextensions.createInterface', createInterface));
 
     const codeActionProvider = new CodeActionProvider();
     let disposable = vscode.languages.registerCodeActionsProvider(documentSelector, codeActionProvider);
     context.subscriptions.push(disposable);
 }
 
-function createClass(args) {
-    promptAndSave(args, 'class');
+function createRazorPage(args) {
+    createPage(args, 'page');
+
 }
 
-function createInterface(args) {
-    promptAndSave(args, 'interface');
-}
+// function createInterface(args) {
+//     promptAndSave(args, 'interface');
+// }
 
-function promptAndSave(args, templatetype: string) {
+
+
+function createPage(args, templatetype: string) {
     if (args == null) {
         args = { _fsPath: vscode.workspace.rootPath }
     }
     let incomingpath: string = args._fsPath;
-    vscode.window.showInputBox({ ignoreFocusOut: true, prompt: 'Please enter filename', value: 'new' + templatetype + '.cs' })
+    let cache = [];
+    vscode.window.showInputBox({ ignoreFocusOut: true, prompt: 'Please enter filename', value: 'new' + templatetype + '.cshtml' })
         .then((newfilename) => {
 
             if (typeof newfilename === 'undefined') {
@@ -92,13 +96,47 @@ function promptAndSave(args, templatetype: string) {
             namespace = namespace.replace(/\s+/g, "_");
             namespace = namespace.replace(/-/g, "_");
 
-            newfilepath = path.basename(newfilepath, '.cs');
+            newfilepath = path.basename(newfilepath, '.cshtml');
 
             openTemplateAndSaveNewFile(templatetype, namespace, newfilepath, originalfilepath);
+            cache.push(namespace)
+            cache.push(newfilepath);
+            cache.push(originalfilepath);
+            createModel(args, cache, 'model');
         });
 }
 
+function createModel(args, path: string[], templatetype: string) {
+    //1- get the name of the fileto be created from the path arg.
+    //2- check if the file existed.
+    if (args == null) {
+        args = { _fsPath: vscode.workspace.rootPath }
+    }
+    if (path.length != 3) {
+        return;
+    }
+
+    let namespace = path[0];
+    let classname = path[1];
+    let filepath = path[2];
+    filepath = correctClassExtenstion(filepath);
+
+    openTemplateAndSaveNewFile(templatetype, namespace, classname, filepath);
+}
+
 function correctExtension(filename) {
+    //TODO: create the same function but for .cshtml
+    if (path.extname(filename) !== '.cshtml') {
+        if (filename.endsWith('.')) {
+            filename = filename + 'cshtml';
+        } else {
+            filename = filename + '.cshtml';
+        }
+    }
+    return filename;
+}
+
+function correctClassExtenstion(filename: string) {
     if (path.extname(filename) !== '.cs') {
         if (filename.endsWith('.')) {
             filename = filename + 'cs';
@@ -132,7 +170,7 @@ function openTemplateAndSaveNewFile(type: string, namespace: string, filename: s
 
     let templatefileName = type + '.tmpl';
 
-    vscode.workspace.openTextDocument(vscode.extensions.getExtension('jchannon.csharpextensions').extensionPath + '/templates/' + templatefileName)
+    vscode.workspace.openTextDocument(vscode.extensions.getExtension('jchannon.razor_pages').extensionPath + '/templates/' + templatefileName)
         .then((doc: vscode.TextDocument) => {
             let text = doc.getText();
             text = text.replace('${namespace}', namespace);
